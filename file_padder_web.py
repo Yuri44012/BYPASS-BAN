@@ -238,7 +238,7 @@ def index():
             with open(filepath, 'ab') as f:
                 f.write(b"\x00" * padding_needed)
 
-        return send_file(filepath, as_attachment=True, download_name=filename)
+        return send_file(filepath, as_attachment=True, download_name=filename, mimetype='application/octet-stream')
 
     return render_template_string(HTML_FORM)
 
