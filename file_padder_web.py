@@ -226,7 +226,8 @@ def index():
         if size_mb <= 0:
             return "Size must be greater than zero."
 
-        filename = secure_filename(file.filename)
+        original_name = os.path.splitext(secure_filename(file.filename))[0]
+filename = f"{original_name}.rbxl"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
 
