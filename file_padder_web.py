@@ -41,65 +41,66 @@ HTML_FORM = """ <!doctype html>
   Target Size (MB): <input type="text" id="size_mb"><br><br>
   <button onclick="uploadFile()">Upload</button>
   <div id="progressBar"><div></div></div>
-  <a id="downloadLink" href="#" download>Download Modified File</a>  <script>
+  <a id="downloadLink" href="#" download>Download Modified File</a>
+  <script>
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');
     const downloadLink = document.getElementById('downloadLink');
-    let selectedFile;
+    let selectedFile;dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropzone.style.borderColor = 'green';
+});
+dropzone.addEventListener('dragleave', () => {
+  dropzone.style.borderColor = '#ccc';
+});
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  selectedFile = e.dataTransfer.files[0];
+  dropzone.textContent = selectedFile.name;
+});
+fileInput.addEventListener('change', e => {
+  selectedFile = e.target.files[0];
+  dropzone.textContent = selectedFile.name;
+});
 
-    dropzone.addEventListener('click', () => fileInput.click());
-    dropzone.addEventListener('dragover', e => {
-      e.preventDefault();
-      dropzone.style.borderColor = 'green';
-    });
-    dropzone.addEventListener('dragleave', () => {
-      dropzone.style.borderColor = '#ccc';
-    });
-    dropzone.addEventListener('drop', e => {
-      e.preventDefault();
-      selectedFile = e.dataTransfer.files[0];
-      dropzone.textContent = selectedFile.name;
-    });
-    fileInput.addEventListener('change', e => {
-      selectedFile = e.target.files[0];
-      dropzone.textContent = selectedFile.name;
-    });
+function uploadFile() {
+  const sizeMb = document.getElementById('size_mb').value;
+  if (!selectedFile || !sizeMb) {
+    alert('Please select a file and enter a size.');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+  formData.append('size_mb', sizeMb);
 
-    function uploadFile() {
-      const sizeMb = document.getElementById('size_mb').value;
-      if (!selectedFile || !sizeMb) {
-        alert('Please select a file and enter a size.');
-        return;
-      }
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('size_mb', sizeMb);
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/', true);
+  xhr.responseType = 'blob';
 
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/', true);
-      xhr.responseType = 'blob';
+  xhr.upload.onprogress = function(e) {
+    const percent = (e.loaded / e.total) * 100;
+    document.querySelector('#progressBar div').style.width = percent + '%';
+    document.querySelector('#progressBar div').textContent = Math.floor(percent) + '%';
+  };
 
-      xhr.upload.onprogress = function(e) {
-        const percent = (e.loaded / e.total) * 100;
-        document.querySelector('#progressBar div').style.width = percent + '%';
-        document.querySelector('#progressBar div').textContent = Math.floor(percent) + '%';
-      };
-
-      xhr.onload = function() {
-        if (xhr.status === 200) {
-          const blob = new Blob([xhr.response]);
-          const url = window.URL.createObjectURL(blob);
-          downloadLink.href = url;
-          downloadLink.download = selectedFile.name;
-          downloadLink.style.display = 'inline-block';
-          downloadLink.textContent = 'Download ' + selectedFile.name;
-        } else {
-          alert('Error uploading file.');
-        }
-      };
-      xhr.send(formData);
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      const blob = new Blob([xhr.response]);
+      const url = window.URL.createObjectURL(blob);
+      downloadLink.href = url;
+      downloadLink.download = selectedFile.name;
+      downloadLink.style.display = 'inline-block';
+      downloadLink.textContent = 'Download ' + selectedFile.name;
+    } else {
+      alert('Error uploading file.');
     }
-  </script></body>
+  };
+  xhr.send(formData);
+}
+
+  </script>
+</body>
 </html>
 """@app.route('/', methods=['GET', 'POST']) def index(): if request.method == 'POST': file = request.files['file'] size_mb = float(request.form['size_mb'])
 
