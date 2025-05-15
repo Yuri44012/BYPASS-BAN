@@ -1,11 +1,14 @@
-file_padder_web.py
+from flask import Flask, request, send_file, render_template_string
+from werkzeug.utils import secure_filename
+import os
 
-from flask import Flask, request, send_file, render_template_string from werkzeug.utils import secure_filename import os
+app = Flask(__name__)
 
-app = Flask(name) UPLOAD_FOLDER = 'uploads' os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-HTML_FORM = """ <!doctype html>
-
+HTML_FORM = """
+<!doctype html>
 <html>
 <head>
   <title>File Padder</title>
@@ -46,82 +49,97 @@ HTML_FORM = """ <!doctype html>
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');
     const downloadLink = document.getElementById('downloadLink');
-    let selectedFile;dropzone.addEventListener('click', () => fileInput.click());
-dropzone.addEventListener('dragover', e => {
-  e.preventDefault();
-  dropzone.style.borderColor = 'green';
-});
-dropzone.addEventListener('dragleave', () => {
-  dropzone.style.borderColor = '#ccc';
-});
-dropzone.addEventListener('drop', e => {
-  e.preventDefault();
-  selectedFile = e.dataTransfer.files[0];
-  dropzone.textContent = selectedFile.name;
-});
-fileInput.addEventListener('change', e => {
-  selectedFile = e.target.files[0];
-  dropzone.textContent = selectedFile.name;
-});
+    let selectedFile;
 
-function uploadFile() {
-  const sizeMb = document.getElementById('size_mb').value;
-  if (!selectedFile || !sizeMb) {
-    alert('Please select a file and enter a size.');
-    return;
-  }
-  const formData = new FormData();
-  formData.append('file', selectedFile);
-  formData.append('size_mb', sizeMb);
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropzone.style.borderColor = 'green';
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.style.borderColor = '#ccc';
+    });
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      selectedFile = e.dataTransfer.files[0];
+      dropzone.textContent = selectedFile.name;
+    });
+    fileInput.addEventListener('change', e => {
+      selectedFile = e.target.files[0];
+      dropzone.textContent = selectedFile.name;
+    });
 
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/', true);
-  xhr.responseType = 'blob';
+    function uploadFile() {
+      const sizeMb = document.getElementById('size_mb').value;
+      if (!selectedFile || !sizeMb) {
+        alert('Please select a file and enter a size.');
+        return;
+      }
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('size_mb', sizeMb);
 
-  xhr.upload.onprogress = function(e) {
-    const percent = (e.loaded / e.total) * 100;
-    document.querySelector('#progressBar div').style.width = percent + '%';
-    document.querySelector('#progressBar div').textContent = Math.floor(percent) + '%';
-  };
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/', true);
+      xhr.responseType = 'blob';
 
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      const blob = new Blob([xhr.response]);
-      const url = window.URL.createObjectURL(blob);
-      downloadLink.href = url;
-      downloadLink.download = selectedFile.name;
-      downloadLink.style.display = 'inline-block';
-      downloadLink.textContent = 'Download ' + selectedFile.name;
-    } else {
-      alert('Error uploading file.');
+      xhr.upload.onprogress = function(e) {
+        const percent = (e.loaded / e.total) * 100;
+        document.querySelector('#progressBar div').style.width = percent + '%';
+        document.querySelector('#progressBar div').textContent = Math.floor(percent) + '%';
+      };
+
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          const blob = new Blob([xhr.response]);
+          const url = window.URL.createObjectURL(blob);
+          downloadLink.href = url;
+          downloadLink.download = selectedFile.name;
+          downloadLink.style.display = 'inline-block';
+          downloadLink.textContent = 'Download ' + selectedFile.name;
+        } else {
+          alert('Error uploading file.');
+        }
+      };
+      xhr.send(formData);
     }
-  };
-  xhr.send(formData);
-}
-
   </script>
 </body>
 </html>
-"""@app.route('/', methods=['GET', 'POST']) def index(): if request.method == 'POST': file = request.files['file'] size_mb = float(request.form['size_mb'])
+"""
 
-if not file or size_mb <= 0:
-        return "Invalid file or size."
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        file = request.files.get('file')
+        size_mb = request.form.get('size_mb')
 
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(filepath)
+        if not file or not size_mb:
+            return "Invalid file or size."
 
-    target_bytes = int(size_mb * 1024 * 1024)
-    current_size = os.path.getsize(filepath)
-    padding_needed = target_bytes - current_size
+        try:
+            size_mb = float(size_mb)
+        except ValueError:
+            return "Size must be a number."
 
-    if padding_needed > 0:
-        with open(filepath, 'ab') as f:
-            f.write(b"\x00" * padding_needed)
+        if size_mb <= 0:
+            return "Size must be greater than zero."
 
-    return send_file(filepath, as_attachment=True)
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
 
-return render_template_string(HTML_FORM)
+        target_bytes = int(size_mb * 1024 * 1024)
+        current_size = os.path.getsize(filepath)
+        padding_needed = target_bytes - current_size
 
-if name == 'main': app.run(debug=True)
+        if padding_needed > 0:
+            with open(filepath, 'ab') as f:
+                f.write(b"\x00" * padding_needed)
 
+        return send_file(filepath, as_attachment=True)
+
+    return render_template_string(HTML_FORM)
+
+if __name__ == '__main__':
+    app.run(debug=True)
