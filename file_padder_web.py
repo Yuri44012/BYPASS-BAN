@@ -13,26 +13,121 @@ HTML_FORM = """
 <head>
   <title>File Padder</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #121014;
+      color: #ddd;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+    h2 {
+      color: #b58cff;
+      text-shadow: 0 0 10px #9b59b6;
+      margin-bottom: 30px;
+    }
     .dropzone {
-      border: 2px dashed #ccc;
-      padding: 30px;
+      border: 3px dashed #b58cff;
+      border-radius: 12px;
+      padding: 40px;
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: #b58cff;
+      cursor: pointer;
+      background: #1e172f;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease;
+      user-select: none;
+      animation: pulse 3s ease-in-out infinite;
+    }
+    .dropzone:hover {
+      border-color: #9b59b6;
+      box-shadow: 0 0 15px #9b59b6;
+      animation-play-state: paused;
+    }
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 0 15px #b58cff55;
+      }
+      50% {
+        box-shadow: 0 0 30px #b58cffaa;
+      }
     }
     #progressBar {
-      width: 100%%;
-      background: #eee;
+      width: 100%;
+      background: #2c2540;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      height: 22px;
+      box-shadow: inset 0 0 8px #000;
     }
     #progressBar div {
-      height: 20px;
+      height: 100%;
       width: 0;
-      background: green;
+      background: linear-gradient(90deg, #b58cff, #9b59b6);
       text-align: center;
       color: white;
+      font-weight: 600;
+      line-height: 22px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 8px #9b59b6;
+    }
+    input[type="text"] {
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      width: 150px;
+      background: #2c2540;
+      color: #ddd;
+      box-shadow: inset 0 0 5px #000;
+      margin-left: 10px;
+      transition: box-shadow 0.3s ease;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      box-shadow: 0 0 12px #9b59b6;
+      background: #3a2e5c;
+    }
+    button {
+      background: #b58cff;
+      border: none;
+      color: #121014;
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 12px #b58cff;
+      transition: background 0.4s ease, box-shadow 0.4s ease;
+      user-select: none;
+    }
+    button:hover {
+      background: #9b59b6;
+      box-shadow: 0 0 20px #9b59b6;
     }
     #downloadLink {
       display: none;
-      margin-top: 20px;
+      margin-top: 25px;
+      color: #b58cff;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-decoration: none;
+      box-shadow: 0 0 12px #b58cff;
+      padding: 10px 25px;
+      border-radius: 12px;
+      background: #1e172f;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+    #downloadLink:hover {
+      background: #3a2e5c;
+      box-shadow: 0 0 25px #9b59b6;
     }
   </style>
 </head>
@@ -41,10 +136,12 @@ HTML_FORM = """
   <div class="dropzone" id="dropzone">Drop file here or click to upload</div>
   <input type="file" id="fileInput" style="display: none;">
   <br>
-  Target Size (MB): <input type="text" id="size_mb"><br><br>
+  Target Size (MB):
+  <input type="text" id="size_mb" placeholder="Enter size in MB"><br><br>
   <button onclick="uploadFile()">Upload</button>
   <div id="progressBar"><div></div></div>
   <a id="downloadLink" href="#" download>Download Modified File</a>
+
   <script>
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');
@@ -54,15 +151,19 @@ HTML_FORM = """
     dropzone.addEventListener('click', () => fileInput.click());
     dropzone.addEventListener('dragover', e => {
       e.preventDefault();
-      dropzone.style.borderColor = 'green';
+      dropzone.style.borderColor = '#9b59b6';
+      dropzone.style.boxShadow = '0 0 25px #9b59b6';
     });
     dropzone.addEventListener('dragleave', () => {
-      dropzone.style.borderColor = '#ccc';
+      dropzone.style.borderColor = '#b58cff';
+      dropzone.style.boxShadow = 'none';
     });
     dropzone.addEventListener('drop', e => {
       e.preventDefault();
       selectedFile = e.dataTransfer.files[0];
       dropzone.textContent = selectedFile.name;
+      dropzone.style.borderColor = '#b58cff';
+      dropzone.style.boxShadow = 'none';
     });
     fileInput.addEventListener('change', e => {
       selectedFile = e.target.files[0];
