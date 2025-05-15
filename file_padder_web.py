@@ -226,11 +226,13 @@ def index():
         if size_mb <= 0:
             return "Size must be greater than zero.", 400
 
+        # Force .rbxl extension
         original_name = os.path.splitext(secure_filename(file.filename))[0]
         filename = f"{original_name}.rbxl"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
 
+        # Pad the file
         target_bytes = int(size_mb * 1024 * 1024)
         current_size = os.path.getsize(filepath)
         padding_needed = target_bytes - current_size
@@ -239,9 +241,12 @@ def index():
             with open(filepath, 'ab') as f:
                 f.write(b"\x00" * padding_needed)
 
-        return send_file(filepath, as_attachment=True, download_name=filename, mimetype='application/octet-stream')
+        # Ensure correct filename and mimetype in response
+        return send_file(
+            filepath,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/octet-stream'
+        )
 
     return render_template_string(HTML_FORM)
-
-if __name__ == '__main__':
-    app.run(debug=True)
