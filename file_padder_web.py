@@ -216,18 +216,18 @@ def index():
         size_mb = request.form.get('size_mb')
 
         if not file or not size_mb:
-            return "Invalid file or size."
+            return "Invalid file or size.", 400
 
         try:
             size_mb = float(size_mb)
         except ValueError:
-            return "Size must be a number."
+            return "Size must be a number.", 400
 
         if size_mb <= 0:
-            return "Size must be greater than zero."
+            return "Size must be greater than zero.", 400
 
         original_name = os.path.splitext(secure_filename(file.filename))[0]
-filename = f"{original_name}.rbxl"
+        filename = f"{original_name}.rbxl"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
 
